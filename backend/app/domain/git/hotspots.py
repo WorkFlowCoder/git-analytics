@@ -1,22 +1,19 @@
-def compute_hotspots(commits, files):
-    file_stats = {}
+from collections import defaultdict
 
-    for c in commits:
-        for mf in (files or []):
-            path = mf.new_path or mf.old_path or "unknown"
+def compute_hotspots(files):
+    file_stats = defaultdict(lambda: {
+        "changes": 0,
+        "additions": 0,
+        "deletions": 0
+    })
 
-            if path not in file_stats:
-                file_stats[path] = {
-                    "changes": 0,
-                    "additions": 0,
-                    "deletions": 0
-                }
+    for f in files:
+        path = f["path"]
 
-            file_stats[path]["changes"] += 1
-            file_stats[path]["additions"] += getattr(mf, "added_lines", 0)
-            file_stats[path]["deletions"] += getattr(mf, "deleted_lines", 0)
+        file_stats[path]["changes"] += 1
+        file_stats[path]["additions"] += f["added"]
+        file_stats[path]["deletions"] += f["deleted"]
 
-    # ranking
     ranked = sorted(
         file_stats.items(),
         key=lambda x: x[1]["changes"],

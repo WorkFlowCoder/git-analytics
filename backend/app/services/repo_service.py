@@ -32,7 +32,11 @@ def clone_repo(repo_url: str, repo_path: str):
     Repo.clone_from(
         repo_url,
         repo_path,
-        multi_options=["--no-single-branch"]
+        multi_options=[
+            "--no-single-branch",
+            "--filter=blob:none",
+            "--depth=200"
+        ]
     )
 
     fix_git_safe_directory(repo_path)

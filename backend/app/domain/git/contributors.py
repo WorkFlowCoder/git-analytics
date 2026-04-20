@@ -5,7 +5,8 @@ def analyze_contributors(commits):
     contributions = defaultdict(int)
 
     for c in commits:
-        contributions[c.author.email] += 1
+        email = (c.author.email or "unknown").lower()
+        contributions[email] += 1
 
     sorted_contrib = sorted(
         contributions.items(),
