@@ -1,3 +1,4 @@
+from app.routes import repo
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -14,3 +15,5 @@ app.add_middleware(
 @app.get("/")
 def root():
 	return {"message": "Git Analytics API is running"}
+
+app.include_router(repo.router)

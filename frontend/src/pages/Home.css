@@ -1,0 +1,22 @@
+.home h1 {
+  margin-bottom: 1rem;
+}
+
+.form {
+  display: flex;
+  gap: 1rem;
+}
+
+.form input {
+  width: 400px;
+  padding: 0.5rem;
+}
+
+.form button {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+.result {
+  margin-top: 2rem;
+}

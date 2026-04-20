@@ -7,11 +7,13 @@ services:
     ports:
       - "8000:8000"
     volumes:
+      - ./backend:/app
       - ./data:/data
     depends_on:
       - redis
       - db
     environment:
+      - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
 
   worker:
