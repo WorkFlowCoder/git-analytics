@@ -1,26 +1,40 @@
 from collections import defaultdict
 
-def compute_hotspots(files):
-    file_stats = defaultdict(lambda: {
-        "changes": 0,
-        "additions": 0,
-        "deletions": 0
-    })
+class HotspotsAgg:
 
-    for f in files:
-        path = f["path"]
+    def __init__(self):
+        self.file_stats = defaultdict(lambda: {
+            "changes": 0,
+            "additions": 0,
+            "deletions": 0,
+            "authors": set()
+        })
 
-        file_stats[path]["changes"] += 1
-        file_stats[path]["additions"] += f["added"]
-        file_stats[path]["deletions"] += f["deleted"]
+    def update(self, path, mf, author):
+        stats = self.file_stats[path]
+        stats["changes"] += 1
+        stats["additions"] += mf.added_lines or 0
+        stats["deletions"] += mf.deleted_lines or 0
+        stats["authors"].add(author)
 
-    ranked = sorted(
-        file_stats.items(),
-        key=lambda x: x[1]["changes"],
-        reverse=True
-    )
+    def result(self):
+        ranked = sorted(
+            self.file_stats.items(),
+            key=lambda x: (
+                x[1]["changes"],
+                x[1]["additions"] + x[1]["deletions"]
+            ),
+            reverse=True
+        )
 
-    return [
-        {"file": f, **stats}
-        for f, stats in ranked[:10]
-    ]
+        return [
+            {
+                "file": path,
+                "changes": s["changes"],
+                "additions": s["additions"],
+                "deletions": s["deletions"],
+                "contributors": len(s["authors"]),
+                "churn": s["additions"] + s["deletions"]
+            }
+            for path, s in ranked[:10]
+        ]

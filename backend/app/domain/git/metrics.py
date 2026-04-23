@@ -1,11 +1,20 @@
-def compute_metrics(commits, contributors, files):
-    file_set = {f["path"] for f in files}
+class MetricsAgg:
 
-    total_changes = len(files)
+    def __init__(self):
+        self.commits = 0
+        self.files = set()
+        self.total_changes = 0
 
-    return {
-        "commits": len(commits),
-        "contributors": len(contributors.contributors),
-        "files_touched": len(file_set),
-        "total_changes": total_changes
-    }
+    def update_commit(self, commit):
+        self.commits += 1
+
+    def update_file(self, path):
+        self.files.add(path)
+        self.total_changes += 1
+
+    def result(self):
+        return {
+            "commits": self.commits,
+            "files_touched": len(self.files),
+            "total_changes": self.total_changes
+        }

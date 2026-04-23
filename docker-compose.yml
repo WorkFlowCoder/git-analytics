@@ -13,14 +13,26 @@ services:
       - redis
       - db
     environment:
-      - PYTHONPATH=/app
-      - PYTHONUNBUFFERED=1
+      PYTHONPATH: /app
+      PYTHONUNBUFFERED: "1"
+      DATABASE_URL: postgresql://user:password@db:5432/gitanalytics
+      REDIS_URL: redis://redis:6379
 
   worker:
-    build: ./worker
+    build: ./backend   # PAS ./worker
+    working_dir: /app
+    command: python -m app.worker.main
     depends_on:
       - redis
       - db
+    environment:
+      DATABASE_URL: postgresql://user:password@db:5432/gitanalytics
+      REDIS_URL: redis://redis:6379
+      PYTHONPATH: /app
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./backend:/app
+      - ./data:/data
 
   frontend:
     build: ./frontend
@@ -34,16 +46,26 @@ services:
       - backend
 
   redis:
-    image: redis:7
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
 
   db:
-    image: postgres:15
+    image: postgres:15-alpine
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: gitanalytics
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d gitanalytics"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 volumes:
   postgres_data:

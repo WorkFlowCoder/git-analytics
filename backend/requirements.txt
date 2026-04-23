@@ -2,3 +2,6 @@ fastapi
 uvicorn
 pydriller
 gitpython
+psycopg2-binary
+rq>=1.15.0
+redis>=4.0.0

@@ -1,20 +1,36 @@
 from collections import defaultdict
 
-def compute_activity(commits):
-    by_author = defaultdict(int)
-    by_day = defaultdict(int)
+class ActivityAgg:
 
-    for c in commits:
-        author = c.author.name if c.author else "unknown"
-        by_author[author] += 1
+    def __init__(self):
+        self.commits_per_day = defaultdict(int)
 
-        try:
-            day = c.author_date.date().isoformat()
-            by_day[day] += 1
-        except:
-            continue
+    def update(self, commit):
+        day = commit.author_date.date()
+        self.commits_per_day[day] += 1
 
-    return {
-        "commits_by_author": dict(by_author),
-        "commits_by_day": dict(by_day)
-    }
+    def result(self):
+        if not self.commits_per_day:
+            return {
+                "commits_per_day": {},
+                "activity_score": 0.0
+            }
+
+        active_days = len(self.commits_per_day)
+        total_days = (max(self.commits_per_day) - min(self.commits_per_day)).days + 1
+
+        # régularité (important pour ton produit)
+        regularity = active_days / total_days if total_days > 0 else 0
+
+        # activité brute normalisée
+        volume = sum(self.commits_per_day.values())
+        volume_score = min(volume / 500, 1.0)
+
+        activity_score = 0.6 * regularity + 0.4 * volume_score
+
+        return {
+            "commits_per_day": dict(self.commits_per_day),
+            "activity_score": round(activity_score, 3),
+            "active_days": active_days,
+            "total_days": total_days
+        }

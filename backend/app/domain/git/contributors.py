@@ -1,23 +1,24 @@
 from collections import defaultdict
-from app.domain.git.types import ContributorStats
 
-def analyze_contributors(commits):
-    contributions = defaultdict(int)
+class ContributorsAgg:
 
-    for c in commits:
-        email = (c.author.email or "unknown").lower()
-        contributions[email] += 1
+    def __init__(self):
+        self.contributions = defaultdict(int)
 
-    sorted_contrib = sorted(
-        contributions.items(),
-        key=lambda x: x[1],
-        reverse=True
-    )
+    def update(self, commit, author):
+        self.contributions[author] += 1
 
-    top = sorted_contrib[0][0] if sorted_contrib else None
+    def result(self):
+        sorted_contrib = sorted(
+            self.contributions.items(),
+            key=lambda x: x[1],
+            reverse=True
+        )
 
-    return ContributorStats(
-        contributors=dict(contributions),
-        top_contributor=top,
-        bus_factor=len(contributions)
-    )
+        top = sorted_contrib[0][0] if sorted_contrib else None
+
+        return {
+            "contributors": dict(self.contributions),
+            "top_contributor": top,
+            "bus_factor": len(self.contributions)
+        }

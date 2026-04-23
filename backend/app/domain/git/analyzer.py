@@ -1,66 +1,60 @@
-from concurrent.futures import ThreadPoolExecutor
-
+# pipeline.py
 from pydriller import Repository
 
-from app.domain.git.hotspots import compute_hotspots
-from app.domain.git.contributors import analyze_contributors
-from app.domain.git.metrics import compute_metrics
+from app.domain.git.contributors import ContributorsAgg
+from app.domain.git.activity import ActivityAgg
+from app.domain.git.hotspots import HotspotsAgg
+from app.domain.git.cochange import CoChangeAgg
+from app.domain.git.metrics import MetricsAgg
 from app.domain.git.risk import compute_risk
-from app.domain.git.activity import compute_activity
-
-
-def safe_traverse(repo_path: str, max_commits=2000):
-    try:
-        return list(
-            Repository(repo_path, num_workers=4).traverse_commits()
-        )[:max_commits]
-    except Exception as e:
-        raise RuntimeError(f"Git traversal failed: {e}")
-
-
-def build_dataset(commits):
-    files = []
-
-    for c in commits:
-        for mf in c.modified_files:
-            path = mf.new_path or mf.old_path
-            if not path:
-                continue
-
-            files.append({
-                "path": path,
-                "added": getattr(mf, "added_lines", 0),
-                "deleted": getattr(mf, "deleted_lines", 0),
-            })
-
-    return files
 
 
 def analyze_repo(repo_path: str):
-    commits = safe_traverse(repo_path)
-    files = build_dataset(commits)
 
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        future_contributors = executor.submit(analyze_contributors, commits)
-        future_activity = executor.submit(compute_activity, commits)
-        future_hotspots = executor.submit(compute_hotspots, files)
+    contributors = ContributorsAgg()
+    activity = ActivityAgg()
+    hotspots = HotspotsAgg()
+    cochange = CoChangeAgg()
+    metrics = MetricsAgg()
 
-        contributors = future_contributors.result()
-        activity = future_activity.result()
-        hotspots = future_hotspots.result()
+    try:
+        for commit in Repository(repo_path, num_workers=4).traverse_commits():
+            author = (commit.author.email or "unknown").lower()
+            contributors.update(commit, author)
+            activity.update(commit)
+            metrics.update_commit(commit)
+            modified_paths = []
+            for mf in commit.modified_files:
+                path = mf.new_path or mf.old_path
+                if not path:
+                    continue
 
-    metrics = compute_metrics(commits, contributors, files)
-    risk = compute_risk(metrics, activity, contributors)
+                modified_paths.append(path)
+                hotspots.update(path, mf, author)
+                metrics.update_file(path)
+
+            cochange.update(modified_paths)
+
+    except Exception as e:
+        raise RuntimeError(f"Git traversal failed: {e}")
+
+    # finalize
+    contributors_data = contributors.result()
+    activity_data = activity.result()
+    hotspots_data = hotspots.result()
+    metrics_data = metrics.result()
+    risk = compute_risk(metrics_data, activity_data, contributors_data)
 
     return {
         "summary": {
-            "commits": metrics["commits"],
-            "contributors": contributors.bus_factor,
-            "files_touched": metrics["files_touched"]
+            "commits": metrics_data["commits"],
+            "contributors": contributors_data["bus_factor"],
+            "files_touched": metrics_data["files_touched"]
         },
-        "metrics": metrics,
-        "contributors": contributors,
-        "activity": activity,
-        "hotspots": hotspots,
-        "risk": risk
+        "metrics": metrics_data,
+        "contributors": contributors_data,
+        "activity": activity_data,
+        "hotspots": hotspots_data,
+        "risk": risk,
+        "cochange_edges": cochange.size()
     }
