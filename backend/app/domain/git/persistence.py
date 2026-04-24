@@ -1,4 +1,5 @@
 import psycopg2
+import json
 import os
 
 DB_DSN = os.getenv(
@@ -10,6 +11,15 @@ DB_DSN = os.getenv(
 def get_conn():
     return psycopg2.connect(DB_DSN)
 
+def update_repo_tree(cur, repo_id: int, tree: dict):
+    cur.execute("""
+        UPDATE repositories
+        SET tree = %s
+        WHERE id = %s
+    """, (
+        json.dumps(tree),
+        repo_id
+    ))
 
 # =========================
 # REPOSITORY
@@ -142,6 +152,7 @@ def persist_to_db(repo_id: int, data: dict):
         insert_file_stats(cur, repo_id, data.get("hotspots", []))
         upsert_activity(cur, repo_id, data.get("activity", {}))
         upsert_risk(cur, repo_id, data.get("risk", {}))
+        update_repo_tree(cur, repo_id, data.get("tree", {}))
 
         conn.commit()
         #print("[DB] commit OK", flush=True)

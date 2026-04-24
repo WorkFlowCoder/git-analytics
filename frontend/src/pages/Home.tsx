@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { loadRepository, getJobStatus, getRepository } from "../services/api";
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
 import "./Home.css";
+import RepoTree from "../components/RepoTree";
 
 const formatDate = (dateStr: string) => {
   const date = new Date(dateStr);
@@ -47,6 +48,7 @@ function Home() {
 
     const fetchRepo = async () => {
       const data = await getRepository(repoId);
+      console.log("Fetched repository data:", data);
       setResult(data);
     };
 
@@ -101,6 +103,7 @@ function Home() {
                 <p>{result.risk?.risk_score ?? "N/A"}</p>
               </div>
             </div>
+            
             <div className="chart-wrapper">
               <h2>Activité des commits</h2>
               <div className="chart-container">
@@ -122,6 +125,18 @@ function Home() {
                 </ResponsiveContainer>
               </div>
             </div>
+
+            {result?.tree && (
+              <div className="stat full">
+                <h3>Arborescence du projet</h3>
+                <RepoTree
+                  tree={result?.tree}
+                  onSelectFile={(file) => {
+                    console.log("Fichier sélectionné :", file);
+                  }}
+                />
+              </div>
+            )}
           </>
         )}
       </div>

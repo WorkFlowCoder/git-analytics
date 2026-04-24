@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS repositories (
     name TEXT NOT NULL,
     path TEXT NOT NULL UNIQUE,
     last_analyzed_commit TEXT,
-    analyzed_at TIMESTAMP DEFAULT NOW()
+    analyzed_at TIMESTAMP DEFAULT NOW(),
+    tree JSONB
 );
 
 -- =========================

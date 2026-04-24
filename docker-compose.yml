@@ -19,8 +19,7 @@ services:
       REDIS_URL: redis://redis:6379
 
   worker:
-    build: ./backend   # PAS ./worker
-    working_dir: /app
+    build: ./backend
     command: python -m app.worker.main
     depends_on:
       - redis
