@@ -1,6 +1,7 @@
 # pipeline.py
 from pydriller import Repository
 
+from app.domain.git.timeline import TimelineAgg
 from app.domain.git.contributors import ContributorsAgg
 from app.domain.git.activity import ActivityAgg
 from app.domain.git.hotspots import HotspotsAgg
@@ -16,6 +17,7 @@ def analyze_repo(repo_path: str):
     hotspots = HotspotsAgg()
     cochange = CoChangeAgg()
     metrics = MetricsAgg()
+    timeline = TimelineAgg()
 
     try:
         for commit in Repository(repo_path, num_workers=4).traverse_commits():
@@ -23,6 +25,7 @@ def analyze_repo(repo_path: str):
             contributors.update(commit, author)
             activity.update(commit)
             metrics.update_commit(commit)
+            timeline.update(commit)
             modified_paths = []
             for mf in commit.modified_files:
                 path = mf.new_path or mf.old_path
@@ -44,6 +47,7 @@ def analyze_repo(repo_path: str):
     hotspots_data = hotspots.result()
     metrics_data = metrics.result()
     risk = compute_risk(metrics_data, activity_data, contributors_data)
+    timeline_data = timeline.result()
 
     return {
         "summary": {
@@ -56,5 +60,6 @@ def analyze_repo(repo_path: str):
         "activity": activity_data,
         "hotspots": hotspots_data,
         "risk": risk,
+        "timeline": timeline_data,
         "cochange_edges": cochange.size()
     }

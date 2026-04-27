@@ -136,6 +136,35 @@ def upsert_risk(cur, repo_id: int, risk: dict):
         risk.get("activity_score")
     ))
 
+# =========================
+# TIMELINE
+# =========================
+def persist_timeline(cur, repo_id: int, timeline_data: list):
+    for item in timeline_data:
+        cur.execute("""
+            INSERT INTO commit_timeline (
+                repo_id,
+                commit_hash,
+                author_name,
+                author_email,
+                commit_date,
+                commit_message,
+                files_changed,
+                insertions,
+                deletions
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            repo_id,
+            item["commit_hash"],
+            item["author"],
+            item["email"],
+            item["date"],
+            item["message"],
+            item["files_changed"],
+            item["insertions"],
+            item["deletions"]
+        ))
 
 # =========================
 # MAIN ENTRYPOINT (FIXED)
@@ -153,6 +182,7 @@ def persist_to_db(repo_id: int, data: dict):
         upsert_activity(cur, repo_id, data.get("activity", {}))
         upsert_risk(cur, repo_id, data.get("risk", {}))
         update_repo_tree(cur, repo_id, data.get("tree", {}))
+        persist_timeline(cur, repo_id, data.get("timeline", []))
 
         conn.commit()
         #print("[DB] commit OK", flush=True)
@@ -165,3 +195,4 @@ def persist_to_db(repo_id: int, data: dict):
     finally:
         cur.close()
         conn.close()
+        

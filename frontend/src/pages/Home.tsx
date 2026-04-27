@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { loadRepository, getJobStatus, getRepository } from "../services/api";
+import { loadRepository, getJobStatus, getRepository, getRepositoryTimeline } from "../services/api";
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
 import "./Home.css";
 import RepoTree from "../components/RepoTree";
@@ -52,7 +52,13 @@ function Home() {
       setResult(data);
     };
 
+    const fetchTimeline = async () => {
+      const timelineData = await getRepositoryTimeline(repoId);
+      console.log("Fetched timeline data:", timelineData);
+    }
+
     fetchRepo();
+    fetchTimeline();
   }, [repoId]);
 
 

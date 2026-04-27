@@ -89,3 +89,25 @@ CREATE TABLE IF NOT EXISTS risk (
         REFERENCES repositories(id)
         ON DELETE CASCADE
 );
+
+-- =========================
+-- COMMIT TIMELINE (N lignes par repo)
+-- =========================
+CREATE TABLE IF NOT EXISTS commit_timeline (
+    id SERIAL PRIMARY KEY,
+
+    repo_id INTEGER NOT NULL REFERENCES repositories(id) ON DELETE CASCADE,
+
+    commit_hash TEXT NOT NULL,
+    author_name TEXT,
+    author_email TEXT,
+
+    commit_date TIMESTAMP NOT NULL,
+    commit_message TEXT,
+
+    files_changed INTEGER DEFAULT 0,
+    insertions INTEGER DEFAULT 0,
+    deletions INTEGER DEFAULT 0,
+
+    created_at TIMESTAMP DEFAULT NOW()
+);

@@ -1,7 +1,7 @@
 import psycopg2
 
 from app.domain.git.persistence import DB_DSN, get_or_create_repo
-from app.services.repo_reader import fetch_repo_details
+from app.services.repo_reader import fetch_repo_details, fetch_repo_timeline
 from fastapi import APIRouter
 from app.schemas.repo import RepoRequest
 from app.services.repo_service import clone_and_analyze
@@ -20,9 +20,9 @@ def get_conn():
 redis_conn = Redis(host="redis", port=6379)
 queue = Queue("git_jobs", connection=redis_conn)
 
-@router.post("/repo/load")
-def load_repo(request: RepoRequest):
-    return clone_and_analyze(request.repo_url)
+#@router.post("/repo/load")
+#def load_repo(request: RepoRequest):
+#    return clone_and_analyze(request.repo_url)
 
 @router.get("/job/{job_id}")
 def get_job(job_id: str):
@@ -41,7 +41,7 @@ def get_job(job_id: str):
         "result": job.result
     }
 
-@router.post("/repo/loadTest")
+@router.post("/repo/load")
 def load_repo(request: RepoRequest):
     repo_url = request.repo_url
     # 1. clone
@@ -73,3 +73,7 @@ def load_repo(request: RepoRequest):
 @router.get("/repo/{repo_id}")
 def get_repo(repo_id: int):
     return fetch_repo_details(repo_id)
+
+@router.get("/repo/timeline/{repo_id}/{page_number}")
+def get_repo_timeline(repo_id: int, page_number: int = 1):
+    return fetch_repo_timeline(repo_id, page_number)

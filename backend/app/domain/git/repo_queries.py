@@ -133,3 +133,43 @@ def get_risk(repo_id: int):
     finally:
         cur.close()
         conn.close()
+
+def get_timeline(repo_id: int, page: int = 1, limit: int = 100):
+    offset = (page - 1) * limit
+    conn = get_conn()
+    cur = conn.cursor()
+    try:
+        # récupération paginée
+        cur.execute("""
+            SELECT
+                commit_hash,
+                author_name,
+                author_email,
+                commit_date,
+                commit_message,
+                files_changed,
+                insertions,
+                deletions
+            FROM commit_timeline
+            WHERE repo_id = %s
+            ORDER BY commit_date DESC
+            LIMIT %s
+            OFFSET %s
+        """, (repo_id, limit, offset))
+        rows = cur.fetchall()
+        return [
+            {
+                #"commit_hash": row[0],
+                "author_name": row[1],
+                #"author_email": row[2],
+                "commit_date": row[3].isoformat() if row[3] else None,
+                "commit_message": row[4],
+                "files_changed": row[5],
+                "insertions": row[6],
+                "deletions": row[7]
+            }
+            for row in rows
+        ]
+    finally:
+        cur.close()
+        conn.close()

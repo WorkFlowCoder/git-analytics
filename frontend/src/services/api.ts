@@ -16,7 +16,7 @@ async function handleResponse(response: Response) {
  * Retourne un job_id (async system)
  */
 export async function loadRepository(repoUrl: string) {
-  const response = await fetch(`${API_BASE_URL}/repo/loadTest`, {
+  const response = await fetch(`${API_BASE_URL}/repo/load`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -44,8 +44,24 @@ export async function getJobStatus(jobId: string) {
   return handleResponse(response);
 }
 
+/**
+ * Récupère le détail d'un repository analysé
+ */
 export async function getRepository(repoId: number) {
-  const response = await fetch(`http://localhost:8000/repo/${repoId}`, {
+  const response = await fetch(`${API_BASE_URL}/repo/${repoId}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return handleResponse(response);
+}
+
+/**
+ * Récupère la timeline d'un repository analysé
+ */
+export async function getRepositoryTimeline(repoId: number, page: number = 1) {
+  const response = await fetch(`${API_BASE_URL}/repo/timeline/${repoId}/${page}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
