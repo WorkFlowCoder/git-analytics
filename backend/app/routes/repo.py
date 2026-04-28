@@ -1,10 +1,10 @@
 import psycopg2
 
 from app.domain.git.persistence import DB_DSN, get_or_create_repo
-from app.services.repo_reader import fetch_repo_details, fetch_repo_timeline
+from app.services.repo_reader import fetch_repo_details, fetch_repo_timeline, fetch_repo_dependency_graph
 from fastapi import APIRouter
 from app.schemas.repo import RepoRequest
-from app.services.repo_service import clone_and_analyze
+#from app.services.repo_service import clone_and_analyze
 
 from redis import Redis
 from rq import Queue
@@ -77,3 +77,7 @@ def get_repo(repo_id: int):
 @router.get("/repo/timeline/{repo_id}/{page_number}")
 def get_repo_timeline(repo_id: int, page_number: int = 1):
     return fetch_repo_timeline(repo_id, page_number)
+
+@router.get("/repo/{repo_id}/dependency-graph")
+def get_repo_dependency_graph(repo_id: int):
+    return fetch_repo_dependency_graph(repo_id)

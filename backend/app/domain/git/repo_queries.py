@@ -173,3 +173,56 @@ def get_timeline(repo_id: int, page: int = 1, limit: int = 100):
     finally:
         cur.close()
         conn.close()
+
+def get_repo_graph(repo_id: int):
+    conn = get_conn()
+    cur = conn.cursor()
+    try:
+        # Fetch nodes
+        cur.execute("""SELECT id, path, language
+            FROM files
+            WHERE repo_id = %s
+            ORDER BY path ASC
+        """, (repo_id,))
+
+        file_rows = cur.fetchall()
+
+        nodes = []
+        for row in file_rows:
+            nodes.append({
+                "id": row[0], "path": row[1], "language": row[2]
+            })
+
+        # Fetch edges
+        cur.execute("""SELECT src_file_id, dst_file_id, dep_type, raw
+            FROM file_dependencies
+            WHERE repo_id = %s
+        """, (repo_id,))
+
+        dependency_rows = cur.fetchall()
+
+        edges = []
+        for row in dependency_rows:
+            edges.append({
+                "source": row[0],
+                "target": row[1],
+                "type": row[2],
+                "raw": row[3]
+            })
+
+        return {
+            "repo_id": repo_id,
+            "nodes": nodes,
+            "edges": edges,
+            "total_nodes": len(nodes),
+            "total_edges": len(edges)
+        }
+
+    except Exception as e:
+        raise RuntimeError(
+            f"Failed to fetch dependency graph for repo_id={repo_id}: {e}"
+        )
+
+    finally:
+        cur.close()
+        conn.close()

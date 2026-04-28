@@ -195,4 +195,51 @@ def persist_to_db(repo_id: int, data: dict):
     finally:
         cur.close()
         conn.close()
-        
+
+def save_graph_to_db(repo_id: int, graph):
+    conn = get_conn()
+    cur = conn.cursor()
+    file_ids = {}
+    # Clean old dependencies first
+    cur.execute("""
+        DELETE FROM file_dependencies
+        WHERE repo_id = %s
+    """, (repo_id,))
+    # Insert / upsert all nodes
+    for file_path in graph.nodes:
+        ext = file_path.split(".")[-1]
+
+        cur.execute("""
+            INSERT INTO files (repo_id, path, language)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (repo_id, path)
+            DO UPDATE SET path = EXCLUDED.path
+            RETURNING id
+        """, (repo_id, file_path, ext))
+
+        file_ids[file_path] = cur.fetchone()[0]
+    # Insert edges
+    for src, dst, data in graph.edges(data=True):
+        src_id = file_ids.get(src)
+        if not src_id:
+            continue
+        # if target file does not exist yet
+        if dst not in file_ids:
+            ext = dst.split(".")[-1]
+
+            cur.execute("""
+                INSERT INTO files (repo_id, path, language)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (repo_id, path)
+                DO UPDATE SET path = EXCLUDED.path
+                RETURNING id""",
+                (repo_id, dst, ext))
+
+            file_ids[dst] = cur.fetchone()[0]
+
+        dst_id = file_ids.get(dst)
+        cur.execute(""" 
+            INSERT INTO file_dependencies ( repo_id, src_file_id, dst_file_id, dep_type, raw)
+            VALUES (%s, %s, %s, %s, %s)""",
+            (repo_id, src_id, dst_id, data.get("type", "import"), data.get("raw")))
+    conn.commit()

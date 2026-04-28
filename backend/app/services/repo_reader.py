@@ -6,7 +6,8 @@ from app.domain.git.repo_queries import (
     get_hotspots,
     get_activity,
     get_risk,
-    get_timeline
+    get_timeline,
+    get_repo_graph
 )
 
 
@@ -50,3 +51,15 @@ def fetch_repo_timeline(repo_id: int, page_number: int):
         "timeline": timeline,
         "total_commits": len(timeline)
     }
+
+def fetch_repo_dependency_graph(repo_id: int):
+    repo = get_repository(repo_id)
+
+    if not repo:
+        raise HTTPException(
+            status_code=404,
+            detail="Repo not found"
+        )
+    
+    graph = get_repo_graph(repo_id)
+    return graph

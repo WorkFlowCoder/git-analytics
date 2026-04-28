@@ -13,28 +13,70 @@ def resolve_import(import_stmt, file_path):
 
     return path
 
+
 def build_graph(repo_path):
     G = nx.DiGraph()
     files = scan_repo(repo_path)
 
+    # Initialize parsers only once per language
+    parsers = {
+        "py": get_parser("py"),
+        # "js": get_parser("js"),
+        # "java": get_parser("java"),
+    }
+
+    # Batch edge creation for better performance
+    edges = []
+
     for file_path, ext in files:
-        if ext not in ["py", "js"]:
+        if ext not in parsers:
             continue
 
-        parser = get_parser(ext)
+        parser = parsers[ext]
 
-        with open(file_path, "r", encoding="utf8") as f:
-            code = f.read()
+        try:
+            # Read file safely in binary mode
+            with open(file_path, "rb") as f:
+                code_bytes = f.read()
 
-        tree = parser.parse(bytes(code, "utf8"))
+            if not code_bytes:
+                continue
 
-        if ext == "py":
-            deps = extract_python_deps(tree, code)
-        #elif ext == "js":
-        #    deps = extract_js_deps(tree)
+            code = code_bytes.decode("utf-8", errors="ignore")
 
-        for dep in deps:
-            target = resolve_import(dep, file_path)
-            G.add_edge(file_path, target, type="import")
+            # Parse AST with Tree-sitter
+            tree = parser.parse(code_bytes)
+
+            # Extract dependencies depending on language
+            if ext == "py":
+                deps = extract_python_deps(tree, code)
+
+            # elif ext == "js":
+            #     deps = extract_js_deps(tree)
+
+            else:
+                deps = []
+
+            # Resolve imports and prepare graph edges
+            for dep in deps:
+                target = resolve_import(dep, file_path)
+
+                if not target:
+                    continue
+
+                edges.append((
+                    file_path,
+                    target,
+                    {
+                        "type": "import",
+                        "raw": dep
+                    }
+                ))
+
+        except Exception as e:
+            print(f"[DependencyGraph] Error parsing {file_path}: {e}")
+
+    # Insert all edges at once (faster than add_edge in loop)
+    G.add_edges_from(edges)
 
     return G
