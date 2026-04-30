@@ -154,6 +154,8 @@ def persist_timeline(cur, repo_id: int, timeline_data: list):
                 deletions
             )
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (repo_id, commit_hash)
+            DO NOTHING
         """, (
             repo_id,
             item["commit_hash"],

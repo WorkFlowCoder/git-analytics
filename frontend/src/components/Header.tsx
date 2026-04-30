@@ -6,7 +6,7 @@ function Header() {
       <h2 className="logo">Git Analytics</h2>
 
       <nav className="nav">
-        <a href="#">Home</a>
+        <a href="/">Home</a>
         <a href="#">Contributions</a>
       </nav>
     </header>

@@ -111,3 +111,52 @@ CREATE TABLE IF NOT EXISTS commit_timeline (
 
     created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- =========================
+-- REPOSITORY FILES (N lignes par repo)
+-- =========================
+CREATE TABLE IF NOT EXISTS files (
+    id SERIAL PRIMARY KEY,
+
+    repo_id INTEGER NOT NULL,
+    path TEXT NOT NULL,
+    language TEXT,
+
+    CONSTRAINT unique_repo_file
+        UNIQUE (repo_id, path),
+
+    CONSTRAINT fk_files_repo
+        FOREIGN KEY (repo_id)
+        REFERENCES repositories(id)
+        ON DELETE CASCADE
+);
+
+-- =========================
+-- REPOSITORY DEPENDENCIES (N lignes par repo)
+-- =========================
+CREATE TABLE IF NOT EXISTS file_dependencies (
+    id SERIAL PRIMARY KEY,
+
+    repo_id INTEGER NOT NULL,
+
+    src_file_id INTEGER NOT NULL,
+    dst_file_id INTEGER NOT NULL,
+
+    dep_type TEXT,
+    raw TEXT,
+
+    CONSTRAINT fk_dependencies_repo
+        FOREIGN KEY (repo_id)
+        REFERENCES repositories(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_dependencies_src
+        FOREIGN KEY (src_file_id)
+        REFERENCES files(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_dependencies_dst
+        FOREIGN KEY (dst_file_id)
+        REFERENCES files(id)
+        ON DELETE CASCADE
+);

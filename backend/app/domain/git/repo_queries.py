@@ -157,6 +157,14 @@ def get_timeline(repo_id: int, page: int = 1, limit: int = 100):
             OFFSET %s
         """, (repo_id, limit, offset))
         rows = cur.fetchall()
+        for row in rows:
+            print(
+                "hash =", row[0],
+                "| author =", row[1],
+                "| date =", row[3],
+                "| message =", row[4],
+                flush=True
+            )
         return [
             {
                 #"commit_hash": row[0],

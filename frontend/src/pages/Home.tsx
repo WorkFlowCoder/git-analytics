@@ -1,25 +1,17 @@
 import { useEffect, useState } from "react";
-import { loadRepository, getJobStatus, getRepository, getRepositoryTimeline } from "../services/api";
-import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
+import { loadRepository, getJobStatus } from "../services/api";
+import { useNavigate } from "react-router-dom";
 import "./Home.css";
-import RepoTree from "../components/RepoTree";
-
-const formatDate = (dateStr: string) => {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
-};
 
 function Home() {
   const [repoUrl, setRepoUrl] = useState("");
   const [jobId, setJobId] = useState<string | null>(null);
-  const [repoId, setRepoId] = useState<number | null>(null);
-  const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleAnalyze = async () => {
     if (!repoUrl.trim()) return;
     setLoading(true);
-    setResult(null);
     const res = await loadRepository(repoUrl);
     // backend now returns job_id
     setJobId(res.job_id);
@@ -35,32 +27,13 @@ function Home() {
         clearInterval(interval);
         const repo_id = status.result?.repo_id;
         if (repo_id) {
-          setRepoId(repo_id);
+          navigate(`/repo/${repo_id}`);
         }
         setLoading(false);
       }
     }, 2000);
     return () => clearInterval(interval);
   }, [jobId]);
-
-    useEffect(() => {
-    if (!repoId) return;
-
-    const fetchRepo = async () => {
-      const data = await getRepository(repoId);
-      console.log("Fetched repository data:", data);
-      setResult(data);
-    };
-
-    const fetchTimeline = async () => {
-      const timelineData = await getRepositoryTimeline(repoId);
-      console.log("Fetched timeline data:", timelineData);
-    }
-
-    fetchRepo();
-    fetchTimeline();
-  }, [repoId]);
-
 
   return (
     <div className="page">
@@ -84,66 +57,6 @@ function Home() {
             <div className="dot"></div>
             <div className="dot"></div>
           </div>
-        )}
-
-        {result && !loading && (
-          <>
-            <div className="grid">
-              <div className="stat">
-                <h3>Commits</h3>
-                <p>{result.summary?.commits}</p>
-              </div>
-
-              <div className="stat">
-                <h3>Contributeurs</h3>
-                <p>{result.summary?.contributors}</p>
-              </div>
-
-              <div className="stat">
-                <h3>Fichiers touchés</h3>
-                <p>{result.summary?.files_touched}</p>
-              </div>
-
-              <div className="stat highlight">
-                <h3>Risk Score</h3>
-                <p>{result.risk?.risk_score ?? "N/A"}</p>
-              </div>
-            </div>
-            
-            <div className="chart-wrapper">
-              <h2>Activité des commits</h2>
-              <div className="chart-container">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={result.activity} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" tickFormatter={formatDate} />
-                    <YAxis allowDecimals={false} />
-                    <Tooltip labelFormatter={(value) => formatDate(value)}/>
-                    <Line
-                      type="monotone"
-                      dataKey="commits"
-                      stroke="#2563eb"
-                      strokeWidth={3}
-                      dot={false}
-                      activeDot={false} 
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {result?.tree && (
-              <div className="stat full">
-                <h3>Arborescence du projet</h3>
-                <RepoTree
-                  tree={result?.tree}
-                  onSelectFile={(file) => {
-                    console.log("Fichier sélectionné :", file);
-                  }}
-                />
-              </div>
-            )}
-          </>
         )}
       </div>
     </div>

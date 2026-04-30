@@ -1,11 +1,19 @@
 import './App.css'
 import MainLayout from './layouts/MainLayout';
 import Home from './pages/Home';
+import RepoPage from "./pages/RepoPage";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
 
 function App() {
   return (
     <MainLayout>
-      <Home />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/repo/:id" element={<RepoPage/>} />
+          <Route path="/" element={<Home />} />
+        </Routes>
+      </BrowserRouter>
     </MainLayout>
   );
 }

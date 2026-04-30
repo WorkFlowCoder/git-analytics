@@ -69,3 +69,16 @@ export async function getRepositoryTimeline(repoId: number, page: number = 1) {
   });
   return handleResponse(response);
 }
+
+/**
+ * Récupère le graph de dépendances d'un repository analysé
+ */
+export async function getRepositoryGraph(repoId: number) {
+  const response = await fetch(`${API_BASE_URL}/repo/${repoId}/dependency-graph`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return handleResponse(response);
+}
