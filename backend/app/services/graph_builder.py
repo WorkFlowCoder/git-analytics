@@ -74,7 +74,8 @@ def build_graph(repo_path):
                 ))
 
         except Exception as e:
-            print(f"[DependencyGraph] Error parsing {file_path}: {e}")
+            #print(f"[DependencyGraph] Error parsing {file_path}: {e}")
+            continue
 
     # Insert all edges at once (faster than add_edge in loop)
     G.add_edges_from(edges)

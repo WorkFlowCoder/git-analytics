@@ -7,7 +7,6 @@ DB_DSN = os.getenv(
     "postgresql://user:password@db:5432/gitanalytics"
 )
 
-
 def get_conn():
     return psycopg2.connect(DB_DSN)
 
@@ -21,9 +20,7 @@ def update_repo_tree(cur, repo_id: int, tree: dict):
         repo_id
     ))
 
-# =========================
 # REPOSITORY
-# =========================
 def get_or_create_repo(cur, name: str, path: str) -> int:
     cur.execute("""
         INSERT INTO repositories (name, path)
@@ -35,10 +32,7 @@ def get_or_create_repo(cur, name: str, path: str) -> int:
 
     return cur.fetchone()[0]
 
-
-# =========================
 # SUMMARY
-# =========================
 def upsert_summary(cur, repo_id: int, metrics: dict, contributors: dict):
     cur.execute("""
         INSERT INTO summary (repo_id, commits, contributors, files_touched)
@@ -55,11 +49,12 @@ def upsert_summary(cur, repo_id: int, metrics: dict, contributors: dict):
         metrics.get("files_touched", 0)
     ))
 
-
-# =========================
 # CONTRIBUTORS
-# =========================
 def insert_contributors(cur, repo_id: int, contributors_data: dict):
+    cur.execute("""
+        DELETE FROM contributors
+        WHERE repo_id = %s
+    """, (repo_id,))
     for email, commits in contributors_data.get("contributors", {}).items():
         cur.execute("""
             INSERT INTO contributors (repo_id, email, commits, is_top_contributor)
@@ -71,11 +66,12 @@ def insert_contributors(cur, repo_id: int, contributors_data: dict):
             email == contributors_data.get("top_contributor")
         ))
 
-
-# =========================
 # FILE STATS
-# =========================
 def insert_file_stats(cur, repo_id: int, hotspots: list):
+    cur.execute("""
+        DELETE FROM file_stats
+        WHERE repo_id = %s
+    """, (repo_id,))
     for f in hotspots:
         cur.execute("""
             INSERT INTO file_stats (
@@ -92,10 +88,7 @@ def insert_file_stats(cur, repo_id: int, hotspots: list):
             f.get("additions", 0) + f.get("deletions", 0)
         ))
 
-
-# =========================
 # ACTIVITY
-# =========================
 def upsert_activity(cur, repo_id: int, activity: dict):
     for date, commits in activity.get("commits_per_day", {}).items():
         cur.execute("""
@@ -109,10 +102,7 @@ def upsert_activity(cur, repo_id: int, activity: dict):
             commits
         ))
 
-
-# =========================
 # RISK
-# =========================
 def upsert_risk(cur, repo_id: int, risk: dict):
     cur.execute("""
         INSERT INTO risk (
@@ -136,26 +126,25 @@ def upsert_risk(cur, repo_id: int, risk: dict):
         risk.get("activity_score")
     ))
 
-# =========================
 # TIMELINE
-# =========================
 def persist_timeline(cur, repo_id: int, timeline_data: list):
     for item in timeline_data:
         cur.execute("""
             INSERT INTO commit_timeline (
-                repo_id,
-                commit_hash,
-                author_name,
-                author_email,
-                commit_date,
-                commit_message,
-                files_changed,
-                insertions,
-                deletions
+                repo_id, commit_hash, author_name, author_email,
+                commit_date, commit_message, files_changed,
+                insertions, deletions
             )
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (repo_id, commit_hash)
-            DO NOTHING
+            DO UPDATE SET
+                author_name = EXCLUDED.author_name,
+                author_email = EXCLUDED.author_email,
+                commit_date = EXCLUDED.commit_date,
+                commit_message = EXCLUDED.commit_message,
+                files_changed = EXCLUDED.files_changed,
+                insertions = EXCLUDED.insertions,
+                deletions = EXCLUDED.deletions
         """, (
             repo_id,
             item["commit_hash"],
@@ -168,14 +157,11 @@ def persist_timeline(cur, repo_id: int, timeline_data: list):
             item["deletions"]
         ))
 
-# =========================
-# MAIN ENTRYPOINT (FIXED)
-# =========================
+# MAIN ENTRYPOINT
 def persist_to_db(repo_id: int, data: dict):
 
     conn = get_conn()
     cur = conn.cursor()
-
     try:
         #print(f"[DB] repo_id = {repo_id}", flush=True)
         upsert_summary(cur, repo_id, data.get("metrics", {}), data.get("contributors", {}))
@@ -201,21 +187,16 @@ def persist_to_db(repo_id: int, data: dict):
 def save_graph_to_db(repo_id: int, graph):
     conn = get_conn()
     cur = conn.cursor()
+    # reset complet graph
+    cur.execute("DELETE FROM file_dependencies WHERE repo_id = %s", (repo_id,))
+    cur.execute("DELETE FROM files WHERE repo_id = %s", (repo_id,))
     file_ids = {}
-    # Clean old dependencies first
-    cur.execute("""
-        DELETE FROM file_dependencies
-        WHERE repo_id = %s
-    """, (repo_id,))
     # Insert / upsert all nodes
     for file_path in graph.nodes:
         ext = file_path.split(".")[-1]
-
         cur.execute("""
             INSERT INTO files (repo_id, path, language)
             VALUES (%s, %s, %s)
-            ON CONFLICT (repo_id, path)
-            DO UPDATE SET path = EXCLUDED.path
             RETURNING id
         """, (repo_id, file_path, ext))
 
@@ -228,12 +209,9 @@ def save_graph_to_db(repo_id: int, graph):
         # if target file does not exist yet
         if dst not in file_ids:
             ext = dst.split(".")[-1]
-
             cur.execute("""
                 INSERT INTO files (repo_id, path, language)
                 VALUES (%s, %s, %s)
-                ON CONFLICT (repo_id, path)
-                DO UPDATE SET path = EXCLUDED.path
                 RETURNING id""",
                 (repo_id, dst, ext))
 

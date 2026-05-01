@@ -14,6 +14,10 @@ function Home() {
     setLoading(true);
     const res = await loadRepository(repoUrl);
     // backend now returns job_id
+    if (res.status!== "queued") {
+      navigate(`/repo/${res.repo_id}`);
+      return;
+    }
     setJobId(res.job_id);
   };
 

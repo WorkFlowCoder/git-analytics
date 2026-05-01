@@ -53,8 +53,8 @@ export default function CommitTimeline({ timeline }: Props) {
 
               <div className="timeline-stats">
                 <span>📁 {commit.files_changed} files</span>
-                <span>➕ {commit.insertions}</span>
-                <span>➖ {commit.deletions || 0}</span>
+                <span className="plusSymbol">➕ {commit.insertions}</span>
+                <span className="minusSymbol">➖ {commit.deletions || 0}</span>
               </div>
             </div>
           </div>

@@ -30,9 +30,9 @@ function RepoPage() {
       const timeline = await getRepositoryTimeline(repoId);
       const graph = await getRepositoryGraph(repoId);
 
-      console.log("repo:", repo);
-      console.log("timeline:", timeline);
-      console.log("graph:", graph);
+      //console.log("repo:", repo);
+      //console.log("timeline:", timeline);
+      //console.log("graph:", graph);
 
       setResult({
         ...repo,
@@ -110,7 +110,7 @@ return (
                 <RepoTree
                   tree={result?.tree}
                   onSelectFile={(file) => {
-                    console.log("Fichier sélectionné :", file);
+                    //console.log("Fichier sélectionné :", file);
                   }}
                 />
               </div>

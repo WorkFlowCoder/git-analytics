@@ -14,7 +14,7 @@
 
 .timeline-item {
   position: relative;
-  margin-bottom: 28px;
+  margin-bottom: 10px;
 }
 
 .timeline-dot {
@@ -31,7 +31,7 @@
 .timeline-content {
   background: white;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 16px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
@@ -56,10 +56,9 @@
 }
 
 .timeline-author {
-  margin-top: 8px;
-  margin-bottom: 12px;
   color: #6b7280;
   font-size: 14px;
+  float: right;
 }
 
 .timeline-stats {
@@ -67,4 +66,12 @@
   gap: 16px;
   font-size: 14px;
   color: #374151;
+}
+
+.plusSymbol {
+  color: #16a34a;
+}
+
+.minusSymbol {
+  color: #dc2626;
 }

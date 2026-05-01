@@ -4,7 +4,8 @@
 CREATE TABLE IF NOT EXISTS repositories (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
-    path TEXT NOT NULL UNIQUE,
+    url TEXT NOT NULL UNIQUE,
+    path TEXT NOT NULL,
     last_analyzed_commit TEXT,
     analyzed_at TIMESTAMP DEFAULT NOW(),
     tree JSONB
@@ -109,7 +110,10 @@ CREATE TABLE IF NOT EXISTS commit_timeline (
     insertions INTEGER DEFAULT 0,
     deletions INTEGER DEFAULT 0,
 
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT NOW(),
+
+    CONSTRAINT unique_repo_commit
+        UNIQUE (repo_id, commit_hash)
 );
 
 -- =========================

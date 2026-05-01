@@ -1,7 +1,10 @@
+from urllib import request
+
 import psycopg2
 
 from app.domain.git.persistence import DB_DSN, get_or_create_repo
 from app.services.repo_reader import fetch_repo_details, fetch_repo_timeline, fetch_repo_dependency_graph
+from app.domain.git.repo_queries import prepare_repository
 from fastapi import APIRouter
 from app.schemas.repo import RepoRequest
 #from app.services.repo_service import clone_and_analyze
@@ -9,7 +12,6 @@ from app.schemas.repo import RepoRequest
 from redis import Redis
 from rq import Queue
 
-from app.domain.git.clone import clone_repo
 from app.jobs.git_analysis import analyze_repo_job
 
 router = APIRouter()
@@ -44,19 +46,20 @@ def get_job(job_id: str):
 @router.post("/repo/load")
 def load_repo(request: RepoRequest):
     repo_url = request.repo_url
-    # 1. clone
-    repo_path = clone_repo(repo_url)
-
-    conn = get_conn()
-    cur = conn.cursor()
-    repo_name = repo_url.split("/")[-1].replace(".git", "")
-    repo_id = get_or_create_repo(cur, repo_name, repo_path)
-
-    conn.commit()
-    cur.close()
-    conn.close()
-    
-    # 2. enqueue job
+    # préparation intelligente du repo
+    result = prepare_repository(repo_url)
+    repo_id = result["repo_id"]
+    repo_path = result["repo_path"]
+    should_analyze = result["should_analyze"]
+    status = result["status"]
+    # si déjà analysé et à jour → pas de job
+    if not should_analyze:
+        return {
+            "repo": repo_url,
+            "repo_id": repo_id,
+            "status": status
+        }
+    # sinon → lancer l’analyse
     job = queue.enqueue(
         analyze_repo_job,
         repo_path,
