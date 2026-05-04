@@ -1,10 +1,8 @@
-from urllib import request
-
 import psycopg2
 
-from app.domain.git.persistence import DB_DSN, get_or_create_repo
+from app.domain.git.persistence import DB_DSN
 from app.services.repo_reader import fetch_repo_details, fetch_repo_timeline, fetch_repo_dependency_graph
-from app.domain.git.repo_queries import prepare_repository
+from app.domain.git.repo_queries import delete_repo, prepare_repository, get_all_repos
 from fastapi import APIRouter
 from app.schemas.repo import RepoRequest
 #from app.services.repo_service import clone_and_analyze
@@ -26,17 +24,30 @@ queue = Queue("git_jobs", connection=redis_conn)
 #def load_repo(request: RepoRequest):
 #    return clone_and_analyze(request.repo_url)
 
+@router.get("/repo")
+def get_all():
+    return get_all_repos()
+
+@router.post("/repo/{repo_id}/reanalyze")
+def reanalyze_repo(repo_id: int):
+    return {
+        "status": "reanalyze a venir !"
+    }
+
+@router.delete("/repo/{repo_id}")
+def delete_repository(repo_id: int):
+    delete_repo(repo_id)
+    return {"status": "deleted"}
+
 @router.get("/job/{job_id}")
 def get_job(job_id: str):
     job = queue.fetch_job(job_id)
-
     if job is None:
         return {
             "id": job_id,
             "status": "not_found",
             "result": None
         }
-
     return {
         "id": job.id,
         "status": job.get_status(),
@@ -48,27 +59,23 @@ def load_repo(request: RepoRequest):
     repo_url = request.repo_url
     # préparation intelligente du repo
     result = prepare_repository(repo_url)
-    repo_id = result["repo_id"]
-    repo_path = result["repo_path"]
-    should_analyze = result["should_analyze"]
-    status = result["status"]
     # si déjà analysé et à jour → pas de job
-    if not should_analyze:
+    if not result["should_analyze"]:
         return {
             "repo": repo_url,
-            "repo_id": repo_id,
-            "status": status
+            "repo_id": result["repo_id"],
+            "status": result["status"]
         }
     # sinon → lancer l’analyse
     job = queue.enqueue(
         analyze_repo_job,
-        repo_path,
+        result["repo_path"],
         repo_url,
-        repo_id
+        result["repo_id"]
     )
     return {
         "repo": repo_url,
-        "repo_id": repo_id,
+        "repo_id": result["repo_id"],
         "job_id": job.id,
         "status": "queued"
     }

@@ -324,3 +324,35 @@ def get_repo_graph(repo_id: int):
     finally:
         cur.close()
         conn.close()
+
+def get_all_repos():
+    conn = get_conn()
+    cur = conn.cursor()
+    try:
+        cur.execute(""" SELECT id, name, analyzed_at
+            FROM repositories
+            ORDER BY analyzed_at DESC"""
+        )
+        repos = cur.fetchall()
+        return [
+            {
+                "id": repo[0],
+                "name": repo[1],
+                "analyzed_at": repo[2].isoformat() if repo[2] else None
+            }
+            for repo in repos
+        ]
+    finally:
+        cur.close()
+        conn.close()
+
+def delete_repo(repo_id: int):
+    conn = get_conn()
+    cur = conn.cursor()
+    try:
+        cur.execute(""" DELETE FROM repositories
+            WHERE id = %s """, (repo_id,))
+        conn.commit()
+    finally:
+        cur.close()
+        conn.close()

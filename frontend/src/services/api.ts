@@ -82,3 +82,37 @@ export async function getRepositoryGraph(repoId: number) {
   });
   return handleResponse(response);
 }
+
+/**
+ * Récupère la liste de tous les repositories analysés
+ */
+export async function getAllRepositories() {
+  const response = await fetch(`${API_BASE_URL}/repo`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return handleResponse(response);
+}
+
+/**
+ * Suppression d'un répertoire
+ */
+export async function deleteRepository(id: number) {
+  const res = await fetch(`${API_BASE_URL}/repo/${id}`, {
+    method: "DELETE",
+  });
+  return handleResponse(res);
+}
+
+
+/**
+ * Relance d'une analyse
+ */
+export async function reanalyzeRepository(id: number) {
+  const res = await fetch(`${API_BASE_URL}/repo/${id}/reanalyze`, {
+    method: "POST",
+  });
+  return handleResponse(res);
+}
