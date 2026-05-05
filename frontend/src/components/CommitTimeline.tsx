@@ -34,8 +34,6 @@ export default function CommitTimeline({ timeline }: Props) {
 
   return (
     <div className="timeline-wrapper">
-      <h2>Commit Timeline</h2>
-
       <div className="timeline">
         {timeline.map((commit, index) => (
           <div key={index} className="timeline-item">

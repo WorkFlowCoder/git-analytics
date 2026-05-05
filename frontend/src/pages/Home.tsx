@@ -41,6 +41,7 @@ function Home() {
 
   return (
     <div className="page">
+      <h1 className="repo-title">Start Analyse</h1>
       <div>
         <div className="card">
           <input

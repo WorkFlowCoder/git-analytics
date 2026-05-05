@@ -1,4 +1,5 @@
-from http.client import HTTPException
+from fastapi import HTTPException
+
 from app.domain.git.repo_queries import (
     get_repository,
     get_summary,

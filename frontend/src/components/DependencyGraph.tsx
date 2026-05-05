@@ -40,9 +40,7 @@ export default function DependencyGraph({ repoId }) {
     async function loadGraph() {
       try {
         setLoading(true);
-
         const graphData = await getRepositoryGraph(repoId);
-
         setRawNodes(graphData.nodes || []);
         setRawEdges(graphData.edges || []);
       } catch (err) {
@@ -58,7 +56,7 @@ export default function DependencyGraph({ repoId }) {
   const nodes = useMemo(() => {
     const baseNodes = rawNodes.map((n) => ({
       id: String(n.id),
-      data: { label: n.path },
+      data: { label: n.path.split(/[/\\]/).pop() },
       position: { x: 0, y: 0 },
     }));
 
@@ -67,8 +65,7 @@ export default function DependencyGraph({ repoId }) {
       rawEdges.map((e) => ({
         id: `${e.source}-${e.target}`,
         source: String(e.source),
-        target: String(e.target),
-        label: e.type,
+        target: String(e.target)
       }))
     );
   }, [rawNodes, rawEdges]);
@@ -77,8 +74,7 @@ export default function DependencyGraph({ repoId }) {
     return rawEdges.map((e) => ({
       id: `${e.source}-${e.target}`,
       source: String(e.source),
-      target: String(e.target),
-      label: e.type,
+      target: String(e.target)
     }));
   }, [rawEdges]);
 

@@ -7,7 +7,7 @@ function Header() {
 
       <nav className="nav">
         <a href="/">Home</a>
-        <a href="#">Contributions</a>
+        <a href="/repo">Contributions</a>
       </nav>
     </header>
   );

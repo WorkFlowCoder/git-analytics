@@ -78,7 +78,7 @@ export default function RepoTree({ tree, onSelectFile }: Props) {
   }, [preparedTree]);
 
   return (
-    <div className="repo-tree" style={{ height: "600px" }}>
+    <div className="repo-tree">
       <Tree
         ref={treeRef}
         data={[preparedTree]}

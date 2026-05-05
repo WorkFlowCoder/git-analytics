@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { getRepository, getRepositoryTimeline, getRepositoryGraph } from "../services/api";
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
+import { useNavigate } from "react-router-dom";
 
-
-import "./Home.css";
+import "./RepoPage.css";
 import RepoTree from "../components/RepoTree";
 import DependencyGraph from "../components/DependencyGraph";
 import { useParams } from "react-router-dom";
@@ -11,6 +11,7 @@ import CommitTimeline from "../components/CommitTimeline";
 
 const formatDate = (dateStr: string) => {
   const date = new Date(dateStr);
+
   return date.toLocaleDateString("fr-FR", {
     day: "2-digit",
     month: "short"
@@ -21,18 +22,19 @@ function RepoPage() {
   const { id } = useParams();
   const repoId = Number(id);
   const [result, setResult] = useState<any>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!repoId) return;
 
     const fetchData = async () => {
       const repo = await getRepository(repoId);
+      if (repo.error) {
+        navigate("/");
+        return;
+      }
       const timeline = await getRepositoryTimeline(repoId);
       const graph = await getRepositoryGraph(repoId);
-
-      //console.log("repo:", repo);
-      //console.log("timeline:", timeline);
-      //console.log("graph:", graph);
 
       setResult({
         ...repo,
@@ -45,11 +47,12 @@ function RepoPage() {
   }, [repoId]);
 
   if (!result) {
-    return <div>Loading repository...</div>;
+    return <div className="loading">Loading repository...</div>;
   }
 
 return (
     <div className="page">
+      <h1 className="repo-title">Repository Values</h1>
       <div>
 
         {result && (
@@ -116,7 +119,9 @@ return (
               </div>
             )}
 
-            <DependencyGraph repoId={repoId} />
+            <div className="stat full">
+              <DependencyGraph repoId={repoId} />
+            </div>
           </>
         )}
       </div>
