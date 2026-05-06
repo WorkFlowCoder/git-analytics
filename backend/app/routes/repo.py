@@ -28,12 +28,6 @@ queue = Queue("git_jobs", connection=redis_conn)
 def get_all():
     return get_all_repos()
 
-@router.post("/repo/{repo_id}/reanalyze")
-def reanalyze_repo(repo_id: int):
-    return {
-        "status": "reanalyze a venir !"
-    }
-
 @router.delete("/repo/{repo_id}")
 def delete_repository(repo_id: int):
     delete_repo(repo_id)

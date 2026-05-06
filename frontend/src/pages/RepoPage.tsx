@@ -18,6 +18,28 @@ const formatDate = (dateStr: string) => {
   });
 };
 
+const fillMissingDates = (data: { date: string; commits: number }[]) => {
+  if (!data.length) return [];
+  const start = new Date(data[0].date);
+  const end = new Date(data[data.length - 1].date);
+
+  const map = new Map(
+    data.map((d) => [d.date, d.commits])
+  );
+
+  const result = [];
+  const current = new Date(start);
+  while (current <= end) {
+    const iso = current.toISOString().split("T")[0];
+    result.push({
+      date: iso,
+      commits: map.get(iso) ?? 0
+    });
+    current.setDate(current.getDate() + 1);
+  }
+  return result;
+};
+
 function RepoPage() {
   const { id } = useParams();
   const repoId = Number(id);
@@ -34,10 +56,12 @@ function RepoPage() {
         return;
       }
       const timeline = await getRepositoryTimeline(repoId);
+      const filledData = fillMissingDates(repo.activity);
       const graph = await getRepositoryGraph(repoId);
 
       setResult({
         ...repo,
+        filledData: filledData,
         timeline: timeline,
         graph
       });
@@ -83,7 +107,7 @@ return (
               <h2>Activité des commits</h2>
               <div className="chart-container">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={result.activity}>
+                  <LineChart data={result.filledData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" tickFormatter={formatDate} />
                     <YAxis allowDecimals={false} />

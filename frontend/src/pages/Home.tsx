@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { loadRepository, getJobStatus } from "../services/api";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import "./Home.css";
 
 function Home() {
@@ -8,6 +8,17 @@ function Home() {
   const [jobId, setJobId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const location = useLocation();
+
+  const repoUrlReanalyze = location.state?.repoUrl;
+
+  useEffect(() => {
+    if (repoUrlReanalyze) {
+      setRepoUrl(repoUrlReanalyze);
+      handleAnalyze();
+    }
+  }, [repoUrl]);
 
   const handleAnalyze = async () => {
     if (!repoUrl.trim()) return;

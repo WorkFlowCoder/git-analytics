@@ -104,14 +104,3 @@ export async function deleteRepository(id: number) {
   });
   return handleResponse(res);
 }
-
-
-/**
- * Relance d'une analyse
- */
-export async function reanalyzeRepository(id: number) {
-  const res = await fetch(`${API_BASE_URL}/repo/${id}/reanalyze`, {
-    method: "POST",
-  });
-  return handleResponse(res);
-}

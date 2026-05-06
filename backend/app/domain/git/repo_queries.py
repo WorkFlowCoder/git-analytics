@@ -329,7 +329,7 @@ def get_all_repos():
     conn = get_conn()
     cur = conn.cursor()
     try:
-        cur.execute(""" SELECT id, name, analyzed_at
+        cur.execute(""" SELECT id, name, url, analyzed_at
             FROM repositories
             ORDER BY analyzed_at DESC"""
         )
@@ -338,7 +338,8 @@ def get_all_repos():
             {
                 "id": repo[0],
                 "name": repo[1],
-                "analyzed_at": repo[2].isoformat() if repo[2] else None
+                "url": repo[2],
+                "analyzed_at": repo[3].isoformat() if repo[3] else None
             }
             for repo in repos
         ]

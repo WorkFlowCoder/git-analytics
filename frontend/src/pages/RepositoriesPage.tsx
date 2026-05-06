@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   getAllRepositories,
-  deleteRepository,
-  reanalyzeRepository
+  deleteRepository
 } from "../services/api";
 import { useNavigate } from "react-router-dom";
 import "./RepositoriesPage.css";
@@ -10,6 +9,7 @@ import "./RepositoriesPage.css";
 type Repository = {
   id: number;
   name: string;
+  url: string;
   analyzed_at: string | null;
 };
 
@@ -29,9 +29,12 @@ export default function RepositoriesPage() {
     setRepos(repos.filter(r => r.id !== id));
   };
 
-  const handleReanalyze = async (id: number) => {
-    await reanalyzeRepository(id);
-    alert("Analysis relaunched");
+  const handleReanalyze = async (repoUrl: string) => {
+    navigate("/", {
+      state: {
+        repoUrl: repoUrl
+      }
+    });
   };
 
   if (loading) return <div className="loading">Loading...</div>;
@@ -65,7 +68,7 @@ export default function RepositoriesPage() {
                 className="btn-reanalyze"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleReanalyze(repo.id);
+                  handleReanalyze(repo.url);
                 }}
               >
                 🔁
