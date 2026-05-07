@@ -16,6 +16,9 @@ type Repository = {
 export default function RepositoriesPage() {
   const [repos, setRepos] = useState<Repository[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
+  const paginatedRepos = repos.slice((page - 1) * pageSize, page * pageSize);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -48,7 +51,7 @@ export default function RepositoriesPage() {
       <h1 className="repo-title">Analyzed Repositories</h1>
 
       <div className="repo-grid">
-        {repos.map((repo) => (
+        {paginatedRepos.map((repo) => (
           <div
             key={repo.id}
             className="repo-card"
@@ -69,8 +72,7 @@ export default function RepositoriesPage() {
                 onClick={(e) => {
                   e.stopPropagation();
                   handleReanalyze(repo.url);
-                }}
-              >
+                }}>
                 🔁
               </button>
 
@@ -79,13 +81,26 @@ export default function RepositoriesPage() {
                 onClick={(e) => {
                   e.stopPropagation();
                   handleDelete(repo.id);
-                }}
-              >
+                }}>
                 🗑
               </button>
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="pagination">
+        <button
+          disabled={page === 1}
+          onClick={() => setPage(page - 1)}>
+          Prev
+        </button>
+        <span>Page {page} / {Math.ceil(repos.length / pageSize)}</span>
+        <button
+          disabled={page >= Math.ceil(repos.length / pageSize)}
+          onClick={() => setPage(page + 1)}>
+          Next
+        </button>
       </div>
     </div>
   );

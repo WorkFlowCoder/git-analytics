@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS repositories (
 -- =========================
 CREATE TABLE IF NOT EXISTS summary (
     id SERIAL PRIMARY KEY,
-    repo_id INTEGER NOT NULL UNIQUE,  -- 🔥 IMPORTANT
+    repo_id INTEGER NOT NULL UNIQUE,
     commits INTEGER DEFAULT 0,
     contributors INTEGER DEFAULT 0,
     files_touched INTEGER DEFAULT 0,
