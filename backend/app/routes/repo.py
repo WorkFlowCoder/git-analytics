@@ -2,10 +2,9 @@ import psycopg2
 
 from app.domain.git.persistence import DB_DSN
 from app.services.repo_reader import fetch_repo_details, fetch_repo_timeline, fetch_repo_dependency_graph
-from app.domain.git.repo_queries import delete_repo, prepare_repository, get_all_repos
+from app.domain.git.repo_queries import delete_repo, prepare_repository, get_all_repos, ssh_to_https
 from fastapi import APIRouter
 from app.schemas.repo import RepoRequest
-#from app.services.repo_service import clone_and_analyze
 
 from redis import Redis
 from rq import Queue
@@ -19,10 +18,6 @@ def get_conn():
 
 redis_conn = Redis(host="redis", port=6379)
 queue = Queue("git_jobs", connection=redis_conn)
-
-#@router.post("/repo/load")
-#def load_repo(request: RepoRequest):
-#    return clone_and_analyze(request.repo_url)
 
 @router.get("/repo")
 def get_all():
@@ -48,11 +43,18 @@ def get_job(job_id: str):
         "result": job.result
     }
 
+
 @router.post("/repo/load")
 def load_repo(request: RepoRequest):
-    repo_url = request.repo_url
+    repo_url = ssh_to_https(request.repo_url)
     # préparation intelligente du repo
     result = prepare_repository(repo_url)
+    # Pas un lien valide
+    if not result.get("repo_id"):
+        return {
+            "repo": repo_url,
+            "status": result["status"]
+        }
     # si déjà analysé et à jour → pas de job
     if not result["should_analyze"]:
         return {

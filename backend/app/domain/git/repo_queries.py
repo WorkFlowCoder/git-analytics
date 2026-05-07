@@ -2,6 +2,7 @@ from app.domain.git.persistence import DB_DSN
 import subprocess
 import psycopg2
 import requests
+import re
 
 from app.domain.git.clone import clone_repo
 
@@ -80,11 +81,15 @@ def is_repo_up_to_date(cur, repo_id: int, repo_url: str):
         #print(f"Error comparing commits for repo_id={repo_id}: {e}")
         return False
 
+def ssh_to_https(url: str) -> str:
+    return re.sub(r"^git@([^:]+):", r"https://\1/", url)
+
 def prepare_repository(repo_url: str):
     conn = get_conn()
     cur = conn.cursor()
     try:
         # Vérification du lien
+        
         if not is_git_repo_accessible(repo_url):
             return {
                 "should_analyze": False,
@@ -96,10 +101,8 @@ def prepare_repository(repo_url: str):
         # Repo déjà existant
         if existing_repo:
             repo_id = existing_repo[0]
-            repo_path = existing_repo[1]
             is_analyzing = existing_repo[2]
             if is_analyzing:
-                print("Le repository est déjà en pleine analyse !",flush=True)
                 return {
                     "repo_id": repo_id,
                     "should_analyze": False,
@@ -117,14 +120,12 @@ def prepare_repository(repo_url: str):
                 SET is_analyzing = TRUE
                 WHERE id = %s
             """, (repo_id,))
-            ### repo_path = clone_repo(repo_url)
             return {
                 "repo_id": repo_id,
                 "should_analyze": True,
                 "status": "update_required"
             }
         # Nouveau repo
-        ### repo_path = clone_repo(repo_url)
         cur.execute("""
             INSERT INTO repositories ( name, path, url, is_analyzing )
             VALUES (%s, %s, %s, TRUE)
@@ -361,7 +362,7 @@ def get_all_repos():
     conn = get_conn()
     cur = conn.cursor()
     try:
-        cur.execute(""" SELECT id, name, url, analyzed_at
+        cur.execute(""" SELECT id, name, url, analyzed_at, is_analyzing
             FROM repositories
             ORDER BY analyzed_at DESC"""
         )
@@ -371,7 +372,8 @@ def get_all_repos():
                 "id": repo[0],
                 "name": repo[1],
                 "url": repo[2],
-                "analyzed_at": repo[3].isoformat() if repo[3] else None
+                "analyzed_at": repo[3].isoformat() if repo[3] else None,
+                "is_analyzing": repo[4]
             }
             for repo in repos
         ]
