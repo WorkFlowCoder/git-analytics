@@ -1,4 +1,5 @@
 from app.domain.git.persistence import DB_DSN
+import subprocess
 import psycopg2
 import requests
 
@@ -9,7 +10,7 @@ def get_conn():
 
 def get_repo_by_url(cur, repo_url: str):
     try:
-        cur.execute(""" SELECT * FROM repositories WHERE url = %s""", (repo_url,))
+        cur.execute(""" SELECT id, path, is_analyzing FROM repositories WHERE url = %s""", (repo_url,))
         return cur.fetchone()
     except Exception as e:
         return None
@@ -54,6 +55,20 @@ def get_remote_last_commit(repo_url: str):
         #print(f"Failed to fetch remote commit for {repo_url}: {e}")
         return None
 
+def is_git_repo_accessible(repo_url: str) -> bool:
+    try:
+        result = subprocess.run(
+            ["git", "ls-remote", repo_url],
+            capture_output=True,
+            text=True,
+            timeout=15
+        )
+
+        return result.returncode == 0
+
+    except Exception:
+        return False
+
 def is_repo_up_to_date(cur, repo_id: int, repo_url: str):
     try:
         db_commit = get_last_db_commit(cur, repo_id)
@@ -69,39 +84,56 @@ def prepare_repository(repo_url: str):
     conn = get_conn()
     cur = conn.cursor()
     try:
+        # Vérification du lien
+        if not is_git_repo_accessible(repo_url):
+            return {
+                "should_analyze": False,
+                "status": "invalid_repository"
+            }
+
         repo_name = repo_url.split("/")[-1].replace(".git", "")
         existing_repo = get_repo_by_url(cur, repo_url)
         # Repo déjà existant
         if existing_repo:
             repo_id = existing_repo[0]
-            repo_path = existing_repo[2]
+            repo_path = existing_repo[1]
+            is_analyzing = existing_repo[2]
+            if is_analyzing:
+                print("Le repository est déjà en pleine analyse !",flush=True)
+                return {
+                    "repo_id": repo_id,
+                    "should_analyze": False,
+                    "status": "in_progress"
+                }
             if is_repo_up_to_date(cur, repo_id, repo_url):
                 return {
                     "repo_id": repo_id,
-                    "repo_path": repo_path,
                     "should_analyze": False,
                     "status": "already_analyzed"
                 }
-            # nouveau commit détecté
-            repo_path = clone_repo(repo_url)
+            # relance analyse
+            cur.execute("""
+                UPDATE repositories
+                SET is_analyzing = TRUE
+                WHERE id = %s
+            """, (repo_id,))
+            ### repo_path = clone_repo(repo_url)
             return {
                 "repo_id": repo_id,
-                "repo_path": repo_path,
                 "should_analyze": True,
                 "status": "update_required"
             }
         # Nouveau repo
-        repo_path = clone_repo(repo_url)
+        ### repo_path = clone_repo(repo_url)
         cur.execute("""
-            INSERT INTO repositories ( name, path, url )
-            VALUES (%s, %s, %s)
+            INSERT INTO repositories ( name, path, url, is_analyzing )
+            VALUES (%s, %s, %s, TRUE)
             RETURNING id
-        """, ( repo_name, repo_path, repo_url ))
+        """, ( repo_name, "", repo_url ))
         repo_id = cur.fetchone()[0]
         conn.commit()
         return {
             "repo_id": repo_id,
-            "repo_path": repo_path,
             "should_analyze": True,
             "status": "new_repository"
         }

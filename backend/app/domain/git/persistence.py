@@ -184,7 +184,7 @@ def persist_to_db(repo_id: int, data: dict):
         cur.close()
         conn.close()
 
-def save_graph_to_db(repo_id: int, graph):
+def save_graph_to_db(repo_id: int, repo_path: str, graph):
     conn = get_conn()
     cur = conn.cursor()
     # reset complet graph
@@ -222,4 +222,26 @@ def save_graph_to_db(repo_id: int, graph):
             INSERT INTO file_dependencies ( repo_id, src_file_id, dst_file_id, dep_type, raw)
             VALUES (%s, %s, %s, %s, %s)""",
             (repo_id, src_id, dst_id, data.get("type", "import"), data.get("raw")))
+    update_lock(cur, repo_id, repo_path)
     conn.commit()
+
+def update_lock(cur, repo_id: int, repo_path: str):
+    cur.execute("""
+        UPDATE repositories
+        SET path = %s,
+        is_analyzing = FALSE,
+        analyzed_at = NOW()
+        WHERE id = %s
+        """, ( repo_path, repo_id )
+        )
+
+def delete_repo(repo_id: int):
+    conn = get_conn()
+    cur = conn.cursor()
+    try:
+        cur.execute(""" DELETE FROM repositories
+            WHERE id = %s """, (repo_id,))
+        conn.commit()
+    finally:
+        cur.close()
+        conn.close()

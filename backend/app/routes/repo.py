@@ -63,7 +63,6 @@ def load_repo(request: RepoRequest):
     # sinon → lancer l’analyse
     job = queue.enqueue(
         analyze_repo_job,
-        result["repo_path"],
         repo_url,
         result["repo_id"]
     )

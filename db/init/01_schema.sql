@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS repositories (
     path TEXT NOT NULL,
     last_analyzed_commit TEXT,
     analyzed_at TIMESTAMP DEFAULT NOW(),
+    is_analyzing BOOLEAN NOT NULL DEFAULT TRUE,
     tree JSONB
 );
 

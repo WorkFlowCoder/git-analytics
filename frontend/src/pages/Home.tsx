@@ -25,6 +25,10 @@ function Home() {
     setLoading(true);
     const res = await loadRepository(repoUrl);
     // backend now returns job_id
+    if (res.status==="in_progress") {
+      setLoading(false);
+      return;
+    }
     if (res.status!== "queued") {
       navigate(`/repo/${res.repo_id}`);
       return;
