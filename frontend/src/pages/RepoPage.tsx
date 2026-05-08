@@ -8,6 +8,7 @@ import RepoTree from "../components/RepoTree";
 import DependencyGraph from "../components/DependencyGraph";
 import { useParams } from "react-router-dom";
 import CommitTimeline from "../components/CommitTimeline";
+import InfoTooltip from "../components/InfoTooltip";
 
 const formatDate = (dateStr: string) => {
   const date = new Date(dateStr);
@@ -39,6 +40,12 @@ const fillMissingDates = (data: { date: string; commits: number }[]) => {
   }
   return result;
 };
+
+const risk = {
+  "title" : "Ce que représente le Risk Score :",
+  "description" : "Le Risk Score mesure la fragilité globale d’un projet logiciel. Il indique à quel point un projet dépend de peu de personnes, change rapidement ou manque de stabilité.",
+  "pins" : ["Plus le score est proche de 1, plus le projet est risqué","Plus il est proche de 0, plus le projet est stable"]
+}
 
 function RepoPage() {
   const { id } = useParams();
@@ -105,7 +112,10 @@ return (
               </div>
 
               <div className="stat highlight">
-                <h3>Risk Score</h3>
+                <h3>
+                  Risk Score
+                  <InfoTooltip title={risk.title} text={risk.description} pins={risk.pins}/>
+                </h3>
                 <p>{result.risk?.risk_score ?? "N/A"}</p>
               </div>
             </div>
