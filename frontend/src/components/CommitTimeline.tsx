@@ -1,4 +1,6 @@
 import "./CommitTimeline.css";
+import { useState } from "react";
+import { getRepositoryTimeline } from "../services/api";
 
 type CommitItem = {
   author_name: string;
@@ -10,12 +12,12 @@ type CommitItem = {
 };
 
 type Props = {
-  timeline: CommitItem[];
+  repoId: number;
+  initialTimeline: CommitItem[];
 };
 
 const formatDate = (dateStr: string) => {
   const date = new Date(dateStr);
-
   return date.toLocaleDateString("fr-FR", {
     day: "2-digit",
     month: "short",
@@ -27,7 +29,41 @@ const formatDate = (dateStr: string) => {
   });
 };
 
-export default function CommitTimeline({ timeline }: Props) {
+export default function CommitTimeline({ repoId, initialTimeline }: Props) {
+
+  const [timeline, setTimeline] = useState(initialTimeline);
+  const [page, setPage] = useState(2);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState( initialTimeline.length > 0 );
+
+  const loadMore = async () => {
+    try {
+      setLoading(true);
+
+      const response = await getRepositoryTimeline(
+        repoId,
+        page
+      );
+
+      const newCommits = response.timeline || [];
+
+      if (newCommits.length === 0) {
+        setHasMore(false);
+        return;
+      }
+
+      setTimeline((prev) => [
+        ...prev,
+        ...newCommits
+      ]);
+
+      setPage((prev) => prev + 1);
+
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!timeline?.length) {
     return <div>No commit history available.</div>;
   }
@@ -58,6 +94,16 @@ export default function CommitTimeline({ timeline }: Props) {
           </div>
         ))}
       </div>
+      {hasMore && (
+        <div className="timeline-load-more">
+          <button
+            onClick={loadMore}
+            disabled={loading}
+          >
+            {loading ? "Loading..." : "Load more"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

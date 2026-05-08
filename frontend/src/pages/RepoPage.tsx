@@ -76,9 +76,16 @@ function RepoPage() {
 
 return (
     <div className="page">
-      <h1 className="repo-title">Repository Values</h1>
-      <div>
+      <h1 className="repo-title">{result.repo.name} - Repository Values</h1>
 
+      <div className="repo-header">
+        <div className="repo-header-sub">
+          {result.repo.url}
+        </div>
+      </div>
+      <div className="repo-separator" />
+
+      <div>
         {result && (
           <>
             <div className="grid">
@@ -127,7 +134,7 @@ return (
             {result?.timeline?.timeline && (
               <div className="stat full">
                 <h3>Historique des commits</h3>
-                <CommitTimeline timeline={result?.timeline?.timeline} />
+                <CommitTimeline repoId={repoId} initialTimeline={result.timeline.timeline} />
               </div>
             )}
 

@@ -119,3 +119,32 @@
   background: rgba(148, 163, 184, 0.3);
   border-radius: 6px;
 }
+
+/*REPO HEADER*/
+
+.repo-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+}
+
+.repo-header-sub {
+  font-size: 13px;
+  color: #94a3b8;
+  word-break: break-all;
+}
+
+/*SEPARATOR*/
+
+.repo-separator {
+  height: 1px;
+  width: 100%;
+
+  margin: 20px 0 30px 0;
+
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(148, 163, 184, 0.25),
+    transparent
+  );
+}

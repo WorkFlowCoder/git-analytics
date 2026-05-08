@@ -186,16 +186,19 @@ export default function RepositoriesPage() {
                     e.stopPropagation();
                     if (!disabled) handleReanalyze(repo.url);
                   }}>
-                  🔁
+                  Relancer 🔁
                 </button>
                 <button
                   className="btn-delete"
                   disabled={disabled}
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (!disabled) handleDelete(repo.id);
-                  }}>
-                  🗑
+                    if (disabled) return;
+                    const confirmed = window.confirm( `Are you sure you want to delete the repository "${repo.name}" ?`);
+                    if (confirmed) handleDelete(repo.id);
+                  }}
+                >
+                   Suppression 🗑
                 </button>
               </div>
             </div>

@@ -147,7 +147,7 @@ def get_repository(repo_id: int):
     cur = conn.cursor()
     try:
         cur.execute("""
-            SELECT id, name, path, analyzed_at, tree
+            SELECT id, name, url, analyzed_at, tree
             FROM repositories
             WHERE id = %s
         """, (repo_id,))
@@ -272,7 +272,7 @@ def get_risk(repo_id: int):
         cur.close()
         conn.close()
 
-def get_timeline(repo_id: int, page: int = 1, limit: int = 100):
+def get_timeline(repo_id: int, page: int = 1, limit: int = 5):
     offset = (page - 1) * limit
     conn = get_conn()
     cur = conn.cursor()
